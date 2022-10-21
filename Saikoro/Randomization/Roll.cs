@@ -1,5 +1,5 @@
 ﻿namespace Saikoro.Randomization;
-internal struct Roll
+public struct Roll
 {
 	public int Value { get; }
 	public bool Removed { get; }
@@ -17,4 +17,6 @@ internal struct Roll
 
 	public override bool Equals(object? obj) => obj is Roll roll && Value == roll.Value && Removed == roll.Removed;
 	public override int GetHashCode() => (Value, Removed).GetHashCode();
+
+	public override string ToString() => $"{Value}{(Removed ? "-" : "")}";
 }

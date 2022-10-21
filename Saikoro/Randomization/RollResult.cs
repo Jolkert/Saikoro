@@ -1,5 +1,5 @@
 ﻿namespace Saikoro.Randomization;
-internal sealed class RollResult
+public sealed class RollResult
 {
 	public int Count { get; }
 	public int Faces { get; }
@@ -57,10 +57,14 @@ internal sealed class RollResult
 			Rolls[i] = rolls[i];
 	}
 
+	public int Sum() => Rolls.Where(roll => !roll.Removed).Select(roll => roll.Value).Sum();
+
 	public void RemoveWhere(Func<Roll, bool> predicate)
 	{
 		for (int i = 0; i < Rolls.Length; i++)
 			if (predicate(Rolls[i]))
 				Rolls[i] = Rolls[i].Remove();
 	}
+
+	public override string ToString() => $"{DieExpression}: {{{string.Join(", ", Rolls)}}}";
 }
