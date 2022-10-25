@@ -27,13 +27,13 @@ internal sealed class Tokenizer : ITokenizer<string, IToken>
 
 			if (type == TokenType.Whitespace)
 				continue;
-			
+
 			yield return type switch
 			{
 				TokenType.Delimiter => Token<Delimiter>.Parse(match, DelimiterExtensions.ToDelimiter),
-				TokenType.Number    => Token<Number>.Parse(match, str => (Number)int.Parse(str)),
-				TokenType.Operator  => Token<Operator>.Parse(match, Operator.FromString),
-				_                   => Token.Empty
+				TokenType.Number => Token<Number>.Parse(match, str => (Number)int.Parse(str)),
+				TokenType.Operator => Token<Operator>.Parse(match, Operator.FromString),
+				_ => Token.Empty
 			};
 		}
 	}

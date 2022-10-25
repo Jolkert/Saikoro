@@ -17,7 +17,7 @@ public sealed class RollResult : IEnumerable<Roll>
 
 		Count = count;
 		Faces = faces;
-		
+
 		_rolls = new Roll[rolls.Length];
 		for (int i = 0; i < rolls.Length; i++)
 			_rolls[i] = rolls[i];

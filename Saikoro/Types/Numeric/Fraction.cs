@@ -7,7 +7,7 @@ public readonly record struct Fraction(int Numerator, int Denominator) : ICompar
 	public static readonly Fraction One  = new Fraction(1, 1);
 
 	// Properties
-	public int Numerator   { get; } = (Sign(Numerator) == Sign(Denominator)) ? Abs(Numerator) : Sign(Denominator) * Numerator;
+	public int Numerator { get; } = (Sign(Numerator) == Sign(Denominator)) ? Abs(Numerator) : Sign(Denominator) * Numerator;
 	public int Denominator { get; } = (Denominator != 0) ? Abs(Denominator) : throw new ArgumentException("Denominator cannot be zero!", nameof(Denominator));
 
 	public int Sign { get => Sign(Numerator); }

@@ -52,7 +52,7 @@ public sealed class DiceEvaluator
 				evaluationStack.Push(item.AsNumber);
 			else
 			{
-				IntermediateValue intermediate = _delegateMap[item.AsOperator](Multipop(evaluationStack, item.AsOperator.Valency));
+				IntermediateValue intermediate = _delegateMap[item.AsOperator](evaluationStack.Multipop(item.AsOperator.Valency));
 				if (item.AsOperator.Value == OperatorValue.Dice)
 					result.AddRoll(intermediate.AsRollResult);
 
@@ -60,9 +60,8 @@ public sealed class DiceEvaluator
 			}
 		}
 
-		Debug.Assert(evaluationStack.Count == 1);
 		result.Total = evaluationStack.Pop().AsNumber;
-		
+
 		return result.Build().ToString();
 	}
 
@@ -88,8 +87,11 @@ public sealed class DiceEvaluator
 		UnaryMinus = new ValentOperator(OperatorValue.Minus, 1),
 		UnaryDice  = new ValentOperator(OperatorValue.Dice, 1);
 	#endregion
+}
 
-	private static T[] Multipop<T>(Stack<T> stack, int count)
+internal static class EvaluationExtensions
+{
+	public static T[] Multipop<T>(this Stack<T> stack, int count)
 	{
 		T[] arr = new T[count];
 		for (int i = count - 1; i >= 0; i--)

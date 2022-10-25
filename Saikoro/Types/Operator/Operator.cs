@@ -12,12 +12,12 @@ public readonly struct Operator
 		Value = value;
 		Priority = value switch
 		{
-			OperatorValue.None                                                      => OperatorPriority.None,
-			OperatorValue.Plus or OperatorValue.Minus                               => OperatorPriority.Additive,
+			OperatorValue.None => OperatorPriority.None,
+			OperatorValue.Plus or OperatorValue.Minus => OperatorPriority.Additive,
 			OperatorValue.Multiply or OperatorValue.Divide or OperatorValue.Modulus => OperatorPriority.Multiplicative,
-			OperatorValue.Power                                                     => OperatorPriority.Exponential,
-			OperatorValue.Dice                                                      => OperatorPriority.Dice,
-			_                                                                       => OperatorPriority.Comparison,
+			OperatorValue.Power => OperatorPriority.Exponential,
+			OperatorValue.Dice => OperatorPriority.Dice,
+			_ => OperatorPriority.Comparison,
 		};
 		Associativity = value switch
 		{

@@ -1,11 +1,10 @@
-﻿using Saikoro.Expressions;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 
 namespace Saikoro.Types.Operator;
 public readonly struct ValentOperator
 {
 	public Operator Value { get; }
-	public int Valency{ get; }
+	public int Valency { get; }
 	// private Func<IntermediateValue[], IntermediateValue> _evaluationDelegate;
 
 	public ValentOperator(Operator value, int valency/*, Func<IntermediateValue[], IntermediateValue>? evaluationDelegate*/)
