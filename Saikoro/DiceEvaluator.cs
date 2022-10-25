@@ -2,7 +2,6 @@
 using Saikoro.Parsing;
 using Saikoro.Randomization;
 using Saikoro.Types.Operator;
-using System.Diagnostics;
 
 namespace Saikoro;
 public sealed class DiceEvaluator
