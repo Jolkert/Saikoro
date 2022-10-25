@@ -5,8 +5,10 @@ using Saikoro.Types.Numeric;
 using Saikoro.Types.Operator;
 
 namespace Saikoro.Parsing;
-public sealed class Parser
+internal sealed class Parser
 {
+	private static readonly ValentOperator BinaryMultiply = ((Operator)OperatorValue.Multiply).ToValent(2);
+
 	private readonly ITokenizer<string, IToken> _tokenizer;
 
 	public Parser(ITokenizer<string, IToken>? tokenizer = null)
@@ -14,11 +16,11 @@ public sealed class Parser
 		_tokenizer = tokenizer ?? new Tokenizer();
 	}
 
-	public string Parse(string input)
+	public Queue<NumberOrOperator> Parse(string input)
 	{
 		// fix these OneOf's to have better names?
-		Queue<QueueItem> outputQueue = new Queue<QueueItem>();
-		Stack<StackItem> operatorStack = new Stack<StackItem>();
+		Queue<NumberOrOperator> outputQueue = new Queue<NumberOrOperator>();
+		Stack<OperatorOrDelimiter> operatorStack = new Stack<OperatorOrDelimiter>();
 
 		IToken previous = Token.Empty;
 		foreach (IToken token in _tokenizer.GetTokenStream(input))
@@ -34,12 +36,9 @@ public sealed class Parser
 				case TokenType.Operator:
 				{
 					Operator op = ((IToken<Operator>)token).Value;
+					int valency = previous.Type == TokenType.Number || previous.IsDelimiter(Delimiter.Close) ? 2 : 1;
 
-					while (operatorStack.TryPeek(out StackItem stackTop) && !stackTop.IsDelimiter && (stackTop.AsOperator.Value.Priority >= (op.Priority + (int)stackTop.AsOperator.Value.Associativity)))
-						outputQueue.Enqueue(operatorStack.Pop().AsOperator);
-
-					int valency = previous.Type != TokenType.Number ? 1 : 2;
-					operatorStack.Push(op.ToValent(valency)); 
+					PushOperatorToStack(op.ToValent(valency));
 					break;
 				}
 
@@ -48,7 +47,11 @@ public sealed class Parser
 					Delimiter delimiter = ((IToken<Delimiter>)token).Value;
 
 					if (delimiter == Delimiter.Open)
+					{
+						if (previous.Type == TokenType.Number || previous.IsDelimiter(Delimiter.Close))
+							PushOperatorToStack(BinaryMultiply);
 						operatorStack.Push(delimiter);
+					}
 					else
 					{
 						while (!operatorStack.Peek().Value.Equals(Delimiter.Open))
@@ -70,38 +73,32 @@ public sealed class Parser
 		while (operatorStack.Count > 0)
 			outputQueue.Enqueue(operatorStack.Pop().AsOperator);
 
-		return string.Join(' ', outputQueue.Select(val => val.Value.ToString()));
+		return outputQueue;
+
+		void PushOperatorToStack(ValentOperator op)
+		{
+			while (operatorStack.TryPeek(out OperatorOrDelimiter stackTop) &&
+						   !stackTop.IsDelimiter &&
+						   stackTop.AsOperator.Valency <= op.Valency &&
+						   stackTop.AsOperator.Value.Priority >= (op.Value.Priority + (int)stackTop.AsOperator.Value.Associativity))
+			{
+				outputQueue.Enqueue(operatorStack.Pop().AsOperator);
+			}
+
+			operatorStack.Push(op);
+		}
 	}
 
-	private struct QueueItem
-	{
-		private readonly OneOf<Number, ValentOperator> _value;
-		public object Value => _value.Value;
-
-		private QueueItem(OneOf<Number, ValentOperator> value) => _value = value;
-
-		// conversions
-		public static implicit operator QueueItem(Number value) => new QueueItem(value);
-		public static implicit operator QueueItem(ValentOperator value) => new QueueItem(value);
-
-		// type checks
-		public bool IsNumber => _value.IsT0;
-		public bool IsOperator => _value.IsT1;
-
-		// casts
-		public Number AsNumber => _value.AsT0;
-		public ValentOperator AsOperator => _value.AsT1;
-	}
-	private struct StackItem
+	private struct OperatorOrDelimiter
 	{
 		private readonly OneOf<ValentOperator, Delimiter> _value;
 		public object Value => _value.Value;
 
-		private StackItem(OneOf<ValentOperator, Delimiter> value) => _value = value;
+		private OperatorOrDelimiter(OneOf<ValentOperator, Delimiter> value) => _value = value;
 
 		// conversions
-		public static implicit operator StackItem(Delimiter value) => new StackItem(value);
-		public static implicit operator StackItem(ValentOperator value) => new StackItem(value);
+		public static implicit operator OperatorOrDelimiter(Delimiter value) => new OperatorOrDelimiter(value);
+		public static implicit operator OperatorOrDelimiter(ValentOperator value) => new OperatorOrDelimiter(value);
 
 		// type checks
 		public bool IsOperator => _value.IsT0;

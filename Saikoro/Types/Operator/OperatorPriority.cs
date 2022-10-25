@@ -5,6 +5,6 @@ public enum OperatorPriority : int
 	Additive,
 	Multiplicative,
 	Exponential,
-	Dice,
-	Comparison
+	Comparison,
+	Dice
 }

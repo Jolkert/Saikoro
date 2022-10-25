@@ -57,6 +57,16 @@ public readonly record struct Fraction(int Numerator, int Denominator) : ICompar
 	public static Fraction operator %(Fraction left, Fraction right) => left - (right * Floor(left / right)); // tbh I don't understand why this formula should hold for nonintegers? but whatever it works -jolk 2022-10-16
 
 	// Member Transformations
+	public Fraction Raise(int power)
+	{
+		if (power == 0)
+			return One;
+
+		if (power < 0)
+			return Reciprocal().Raise(-power);
+
+		return new Fraction((int)Pow(Numerator, power), (int)Pow(Denominator, power)).Reduced();
+	}
 	public Fraction Reciprocal() => (Numerator != 0) ? new Fraction(Denominator, Numerator) : throw new DivideByZeroException();
 	public Fraction Reduced()
 	{

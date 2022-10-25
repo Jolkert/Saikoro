@@ -20,6 +20,8 @@ public readonly struct Number : IEquatable<Number>, IComparable<Number>
 	public static implicit operator Number(Fraction value) => new Number(value);
 	public static implicit operator Number(double value) => new Number(value);
 
+	public static explicit operator int(Number number) => number.IsFraction ? (int)number.AsFraction : (int)number.AsDouble;
+
 	public bool IsFraction => _valueIfFraction is not null;
 
 	// Casts
@@ -43,6 +45,11 @@ public readonly struct Number : IEquatable<Number>, IComparable<Number>
 
 	public static bool operator <=(Number left, Number right) => left.CompareTo(right) <= 0;
 	public static bool operator >=(Number left, Number right) => left.CompareTo(right) >= 0;
+
+
+	// Unary operators
+	public static Number operator +(Number operand) => operand;
+	public static Number operator -(Number operand) => operand.IsFraction ? -operand.AsFraction : -operand.AsDouble;
 
 	// Binary math operators
 	public static Number operator +(Number left, Number right)
@@ -74,6 +81,14 @@ public readonly struct Number : IEquatable<Number>, IComparable<Number>
 		return BothAreFractions(left, right) ?
 			left.AsFraction % right.AsFraction :
 			left.AsDouble % right.AsDouble;
+	}
+
+	// Other math
+	public Number Raise(Number power)
+	{
+		return BothAreFractions(this, power) && power.AsFraction.Denominator == 1 ?
+			AsFraction.Raise((int)power.AsFraction) :
+			Math.Pow(AsDouble, power.AsDouble);
 	}
 
 	// Overrides

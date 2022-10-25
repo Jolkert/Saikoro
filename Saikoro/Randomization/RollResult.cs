@@ -62,15 +62,17 @@ public sealed class RollResult : IEnumerable<Roll>
 
 	public int Sum() => this.Where(roll => !roll.Removed).Sum(roll => roll.Value);
 
-	public void RemoveWhere(Func<Roll, bool> predicate)
+	public RollResult RemoveWhere(Func<Roll, bool> predicate)
 	{
 		for (int i = 0; i < _rolls.Length; i++)
 			if (predicate(_rolls[i]))
 				_rolls[i] = _rolls[i].Remove();
+
+		return this;
 	}
 
 	public override string ToString() => $"{DieExpression}: {{{string.Join(", ", _rolls)}}}";
 
-	public IEnumerator<Roll> GetEnumerator() => (IEnumerator<Roll>)_rolls.GetEnumerator();
+	public IEnumerator<Roll> GetEnumerator() => ((IEnumerable<Roll>)_rolls).GetEnumerator();
 	IEnumerator IEnumerable.GetEnumerator() => _rolls.GetEnumerator();
 }

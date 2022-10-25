@@ -11,7 +11,7 @@ public sealed class DiceRoller
 	{
 		Span<Roll> rolls = stackalloc Roll[count]; // fuck reference types. all my homies hate reference types -jolk 2022-10-21
 		for (int i = 0; i < count; i++)
-			rolls[i] = _random.Next(faces);
+			rolls[i] = _random.Next(faces) + 1;
 
 		return new RollResult(count, faces, rolls);
 	}
