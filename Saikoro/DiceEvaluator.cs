@@ -8,6 +8,7 @@ public sealed class DiceEvaluator
 {
 	private readonly DiceRoller _roller;
 	private readonly Parser _parser = new Parser();
+	private readonly IReadOnlyDictionary<ValentOperator, Func<IntermediateValue[], IntermediateValue>> _delegateMap;
 
 	public DiceEvaluator(Random? random = null)
 	{
@@ -63,8 +64,6 @@ public sealed class DiceEvaluator
 
 		return result.Build().ToString();
 	}
-
-	private readonly IReadOnlyDictionary<ValentOperator, Func<IntermediateValue[], IntermediateValue>> _delegateMap;
 
 	#region Operators
 	private static readonly ValentOperator
