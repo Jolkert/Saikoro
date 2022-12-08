@@ -8,82 +8,79 @@ public sealed class DiceEvaluator
 {
 	private readonly DiceRoller _roller;
 	private readonly Parser _parser = new Parser();
-	private readonly IReadOnlyDictionary<ValentOperator, Func<IntermediateValue[], IntermediateValue>> _delegateMap;
+	private readonly IReadOnlyDictionary<ValentOperator, Func<IntermediateValue[], DiceRoller, IntermediateValue>> _delegateMap;
 
 	public DiceEvaluator(Random? random = null)
 	{
 		_roller = new DiceRoller(random ?? new Random());
-		_delegateMap = new Dictionary<ValentOperator, Func<IntermediateValue[], IntermediateValue>>()
+		_delegateMap = new Dictionary<ValentOperator, Func<IntermediateValue[], DiceRoller, IntermediateValue>>()
 		{
-			{ BinaryPlus,  args => args[0].AsNumber + args[1].AsNumber },
-			{ BinaryMinus, args => args[0].AsNumber - args[1].AsNumber },
-			{ Multiply,    args => args[0].AsNumber * args[1].AsNumber },
-			{ Divide,      args => args[0].AsNumber / args[1].AsNumber },
-			{ Modulus,     args => args[0].AsNumber % args[1].AsNumber },
-			{ Power,       args => args[0].AsNumber.Raise(args[1].AsNumber) },
+			{ BinaryPlus,  (args, roller) => args[0].AsNumber + args[1].AsNumber },
+			{ BinaryMinus, (args, roller) => args[0].AsNumber - args[1].AsNumber },
+			{ Multiply,    (args, roller) => args[0].AsNumber * args[1].AsNumber },
+			{ Divide,      (args, roller) => args[0].AsNumber / args[1].AsNumber },
+			{ Modulus,     (args, roller) => args[0].AsNumber % args[1].AsNumber },
+			{ Power,       (args, roller) => args[0].AsNumber.Raise(args[1].AsNumber) },
 
-			{ UnaryPlus,  args => +args[0].AsNumber },
-			{ UnaryMinus, args => -args[0].AsNumber },
+			{ UnaryPlus,  (args, roller) => +args[0].AsNumber },
+			{ UnaryMinus, (args, roller) => -args[0].AsNumber },
 
-			{ BinaryDice, args => _roller.Roll((int)args[1].AsNumber, (int)args[0].AsNumber) },
-			{ UnaryDice,  args => _roller.Roll((int)args[0].AsNumber, 1) },
+			{ BinaryDice, (args, roller) => roller.Roll((int)args[1].AsNumber, (int)args[0].AsNumber) },
+			{ UnaryDice,  (args, roller) => roller.Roll((int)args[0].AsNumber, 1) },
 
-			{ Equal,          args => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value == args[1].AsNumber)) },
-			{ NotEqual,       args => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value != args[1].AsNumber)) },
-			{ LessThan,       args => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value < args[1].AsNumber)) },
-			{ GreaterThan,    args => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value > args[1].AsNumber)) },
-			{ LessOrEqual,    args => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value <= args[1].AsNumber)) },
-			{ GreaterOrEqual, args => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value >= args[1].AsNumber)) },
+			{ Equal,          (args, roller) => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value == args[1].AsNumber)) },
+			{ NotEqual,       (args, roller) => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value != args[1].AsNumber)) },
+			{ LessThan,       (args, roller) => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value < args[1].AsNumber)) },
+			{ GreaterThan,    (args, roller) => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value > args[1].AsNumber)) },
+			{ LessOrEqual,    (args, roller) => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value <= args[1].AsNumber)) },
+			{ GreaterOrEqual, (args, roller) => args[0].AsRollResult.RemoveWhere(roll => !(roll.Value >= args[1].AsNumber)) },
 		};
 	}
 
-	public string Evaluate(string input)
+	public DiceResult Evaluate(string input)
 	{
 		Queue<NumberOrOperator> parseQueue = _parser.Parse(input);
 		Stack<IntermediateValue> evaluationStack = new Stack<IntermediateValue>();
 
 		DiceResultBuilder result = new DiceResultBuilder();
 
-		while (parseQueue.Count > 0)
+		while (parseQueue.TryDequeue(out NumberOrOperator item))
 		{
-			NumberOrOperator item = parseQueue.Dequeue();
-
 			if (item.IsNumber)
 				evaluationStack.Push(item.AsNumber);
 			else
 			{
-				IntermediateValue intermediate = _delegateMap[item.AsOperator](evaluationStack.Multipop(item.AsOperator.Valency));
+				IntermediateValue intermediate = _delegateMap[item.AsOperator](evaluationStack.Multipop(item.AsOperator.Valency), _roller);
 				if (item.AsOperator.Value == OperatorValue.Dice)
 					result.AddRoll(intermediate.AsRollResult);
 
 				evaluationStack.Push(intermediate);
 			}
 		}
-
 		result.Total = evaluationStack.Pop().AsNumber;
 
-		return result.Build().ToString();
+		return result;
 	}
 
 	#region Operators
 	private static readonly ValentOperator
-		BinaryPlus     = new ValentOperator(OperatorValue.Plus, 2),
-		BinaryMinus    = new ValentOperator(OperatorValue.Minus, 2),
-		Multiply       = new ValentOperator(OperatorValue.Multiply, 2),
-		Divide         = new ValentOperator(OperatorValue.Divide, 2),
-		Modulus        = new ValentOperator(OperatorValue.Modulus, 2),
-		Power          = new ValentOperator(OperatorValue.Power, 2),
-		BinaryDice     = new ValentOperator(OperatorValue.Dice, 2),
-		Equal          = new ValentOperator(OperatorValue.Equal, 2),
-		NotEqual       = new ValentOperator(OperatorValue.NotEqual, 2),
-		LessThan       = new ValentOperator(OperatorValue.LessThan, 2),
-		GreaterThan    = new ValentOperator(OperatorValue.GreaterThan, 2),
-		LessOrEqual    = new ValentOperator(OperatorValue.LessOrEqual, 2),
+		BinaryPlus = new ValentOperator(OperatorValue.Plus, 2),
+		BinaryMinus = new ValentOperator(OperatorValue.Minus, 2),
+		Multiply = new ValentOperator(OperatorValue.Multiply, 2),
+		Divide = new ValentOperator(OperatorValue.Divide, 2),
+		Modulus = new ValentOperator(OperatorValue.Modulus, 2),
+		Power = new ValentOperator(OperatorValue.Power, 2),
+		BinaryDice = new ValentOperator(OperatorValue.Dice, 2),
+		Equal = new ValentOperator(OperatorValue.Equal, 2),
+		NotEqual = new ValentOperator(OperatorValue.NotEqual, 2),
+		LessThan = new ValentOperator(OperatorValue.LessThan, 2),
+		GreaterThan = new ValentOperator(OperatorValue.GreaterThan, 2),
+		LessOrEqual = new ValentOperator(OperatorValue.LessOrEqual, 2),
 		GreaterOrEqual = new ValentOperator(OperatorValue.GreaterOrEqual, 2),
 
-		UnaryPlus  = new ValentOperator(OperatorValue.Plus, 1),
+		UnaryPlus = new ValentOperator(OperatorValue.Plus, 1),
 		UnaryMinus = new ValentOperator(OperatorValue.Minus, 1),
-		UnaryDice  = new ValentOperator(OperatorValue.Dice, 1);
+		UnaryDice = new ValentOperator(OperatorValue.Dice, 1);
 	#endregion
 }
 
